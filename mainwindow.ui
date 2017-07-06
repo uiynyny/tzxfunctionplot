@@ -20,15 +20,13 @@
      <x>0</x>
      <y>0</y>
      <width>501</width>
-     <height>21</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menufile">
     <property name="title">
      <string>open</string>
     </property>
-    <addaction name="actionimage_file"/>
-    <addaction name="actionreal_file"/>
     <addaction name="actionopen_file"/>
    </widget>
    <addaction name="menufile"/>

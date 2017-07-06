@@ -10,7 +10,7 @@
 #include <QScrollArea>
 #include <qwt_plot_legenditem.h>
 #include <qwt_plot_curve.h>
-#include <qwt_symbol.h>
+#include <qwt_plot_marker.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -18,10 +18,12 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     data=new Data();
+    //set the main layout of the window
     QScrollArea *scrollArea = new QScrollArea;
     layout = new QVBoxLayout;
     QWidget *temp=new QWidget;
     temp->setLayout(layout);
+
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scrollArea->setWidgetResizable(true);
     scrollArea->setWidget(temp);
@@ -33,79 +35,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-//void MainWindow::on_actionimage_file_triggered()
-//{
-//    QString files = QFileDialog::getOpenFileName(this,tr("Open image file"),QString(),"csv file (*.csv);; all file(*)");
-//    if(files.isEmpty())return;
-//    openFile(files,"imag");
 
-//    QLayoutItem *c;
-//    while((c=layout->takeAt(0))!=0)
-//        delete c;
-
-//    initplot();
-//    replot();
-//}
-
-//void MainWindow::on_actionreal_file_triggered()
-//{
-//    QString files = QFileDialog::getOpenFileName(this,tr("Open real file"),QString(),"csv file (*.csv);; all file(*)");
-//    if(files.isEmpty())return;
-//    openFile(files,"real");
-//}
-
-void MainWindow::openFile(QString fname,QString type){
-    if(type=="imag"){
-        data->imag.clear();
-        data->Dist.clear();
-    }else if(type=="real"){
-        data->real.clear();
-        data->Dist.clear();
-    }
-    std::vector <std::string> title;
-    std::fstream fin(fname.toStdString());
-    CSVLoader *loader=new CSVLoader();
-    loader->ReadFromStream(fin);
-    CSVLoader::Lines &lines = loader->GetLines();
-    bool firsttime=true;
-    for(CSVLoader::Lines::iterator it = lines.begin();it !=lines.end();++it){
-        CSVLoader::Line line = *it;
-        if(line.Size()!=1){
-            if(firsttime){
-                firsttime=false;
-                for(int i=0;i<line.Size();i++){
-                    title.push_back((std::string)line[i].AsString());
-                    std::vector<double> valueVector;
-                    if(i>5 && !title[i].empty()){
-                        if(type=="imag")
-                            data->imag.push_back(make_pair(title[i],valueVector));
-                        else
-                            data->real.push_back(make_pair(title[i],valueVector));
-                    }
-                }
-            }else{
-            for(int i=0;i<line.Size();i++){
-                if(title[i]=="LineDist")
-                    data->Dist.push_back(line[i].AsDouble());
-                if(i>5){
-                    if(type=="imag")
-                        for(int j=0;j<data->imag.size();j++){
-                            if(data->imag[j].first==title[i]){
-                                data->imag[j].second.push_back(line[i].AsDouble());
-                            }
-                        }
-                    else
-                        for(int j=0;j<data->real.size();j++){
-                            if(data->real[j].first==title[i]){
-                                data->real[j].second.push_back(line[i].AsDouble());
-                            }
-                        }
-                }
-            }
-            }
-        }
-    }
-}
 
 void MainWindow::initplot(){
     plot.clear();
@@ -116,12 +46,14 @@ void MainWindow::initplot(){
             delete item;
         }
     for(int i=0;i<data->imag.size();i++){
+        //plot for each set of frequency
         QwtPlot *p = new QwtPlot;
         p->enableAxis(QwtPlot::yRight,false);
         p->setAxisTitle(QwtPlot::yLeft,QString::fromStdString(data->imag[i].first));
-        p->setAxisScale(QwtPlot::yLeft, -1.0,1.0);
+        p->setAxisScale(QwtPlot::yLeft, -2.0,2.0,1);
         p->setCanvasBackground( QBrush(Qt::white));
 
+        //the legend for two lines in each plot
         QwtPlotLegendItem *legendItem = new QwtPlotLegendItem();
         legendItem->setRenderHint(QwtPlotItem::RenderAntialiased);
         legendItem->setTextPen(QColor(Qt::black));
@@ -132,12 +64,22 @@ void MainWindow::initplot(){
         legendItem->setMaxColumns(1);
         legendItem->setAlignment(Qt::AlignRight|Qt::AlignBottom);
         legendItem->attach(p);
+
+        //draw the horizontal line through y=0
+        QwtPlotMarker *mY = new QwtPlotMarker();
+        mY->setLabel( QString::fromLatin1( "y = 0" ) );
+        mY->setLabelAlignment( Qt::AlignRight | Qt::AlignTop );
+        mY->setLineStyle( QwtPlotMarker::HLine );
+        mY->setYValue( 0.0 );
+        mY->attach( p );
+
         layout->addWidget(p);
         plot.push_back(p);
     }
 }
 
 void MainWindow::replot(){
+    //read all points from image and make the curve
     for(int i=0; i<data->imag.size();i++){
         QPolygonF p;
         for(int j=0; j<data->imag[i].second.size();j++){
@@ -146,24 +88,30 @@ void MainWindow::replot(){
         QwtPlotCurve *curve= new QwtPlotCurve("Quadrature");
         curve->setYAxis(QwtPlot::yLeft);
         curve->setSamples(p);
-        curve->setPen(Qt::red,2);
+        curve->setPen(Qt::green,2);
+        curve->setStyle(QwtPlotCurve::Lines);
+        curve->setCurveAttribute(QwtPlotCurve::Fitted);
         curve->attach(plot[i]);
     }
+    //read all points from the real and make the curve
     for(int i=0; i<data->real.size();i++){
         QPolygonF p;
         for(int j=0; j<data->real[i].second.size();j++){
             p<<QPointF(data->Dist[j],data->real[i].second.at(j));
         }
-        QwtPlotCurve *curve= new QwtPlotCurve("Quadrature");
+        QwtPlotCurve *curve= new QwtPlotCurve("In-Phase");
         curve->setYAxis(QwtPlot::yLeft);
         curve->setSamples(p);
-        curve->setPen(Qt::green,2);
+        curve->setPen(Qt::red,2);
+        curve->setStyle(QwtPlotCurve::Lines);
+        curve->setCurveAttribute(QwtPlotCurve::Fitted);
         curve->attach(plot[i]);
     }
 }
 
 void MainWindow::on_actionopen_file_triggered()
 {
+    //open file dialog
     load_Dialog *loadpage=new load_Dialog(NULL, data);
     loadpage->setModal(true);
     loadpage->exec();

@@ -18,15 +18,11 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-//    void openFile(QString fname, QString type);
+    //void openFile(QString fname, QString type);
     void initplot();
     void replot();
 
 private slots:
-//    void on_actionimage_file_triggered();
-
-//    void on_actionreal_file_triggered();
-
     void on_actionopen_file_triggered();
 
 private:
