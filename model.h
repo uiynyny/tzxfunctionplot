@@ -6,8 +6,14 @@
 class Data{
 public:
 std::vector<double> Dist;
-typedef std::pair<std::string, std::vector<double>> freq;
-std::vector<freq> freqs;
+std::vector<std::pair<std::string, std::vector<double>>> real;
+std::vector<std::pair<std::string, std::vector<double>>> imag;
+
+void clear(){
+    Dist.clear();
+    imag.clear();
+    real.clear();
+}
 };
 
 #endif // MODEL_H

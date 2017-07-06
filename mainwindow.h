@@ -5,6 +5,7 @@
 
 #include "model.h"
 #include <qwt_plot.h>
+#include <QVBoxLayout>
 
 namespace Ui {
 class MainWindow;
@@ -17,18 +18,22 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    void openFile(QString fname);
-    void initplot(int i,QColor color);
+//    void openFile(QString fname, QString type);
+    void initplot();
+    void replot();
 
 private slots:
-    void on_actionimage_file_triggered();
+//    void on_actionimage_file_triggered();
 
-    void on_actionreal_file_triggered();
+//    void on_actionreal_file_triggered();
+
+    void on_actionopen_file_triggered();
 
 private:
     Ui::MainWindow *ui;
     Data* data;
-    QwtPlot *plot;
+    std::vector<QwtPlot *> plot;
+    QVBoxLayout *layout;
 };
 
 #endif // MAINWINDOW_H
