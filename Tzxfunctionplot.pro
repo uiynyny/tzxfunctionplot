@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui printsupport
 CONFIG += qwt
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -26,15 +26,17 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += main.cpp \
         mainwindow.cpp \
     CSVLoader.cpp \
-    load_dialog.cpp
+    plotview.cpp \
+    custom_size.cpp
 
 HEADERS += mainwindow.h \
     CSVLoader.h \
     model.h \
-    load_dialog.h
+    plotview.h \
+    custom_size.h
 
 FORMS += mainwindow.ui \
-    load_dialog.ui
+    custom_size.ui
 
 INCLUDEPATH += "C:/boost_1_64_0/"
 LIBS += -L"C:/boost_1_64_0/stage/lib"

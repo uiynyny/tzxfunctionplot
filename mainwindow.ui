@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>501</width>
-    <height>327</height>
+    <width>777</width>
+    <height>496</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,15 +19,15 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>501</width>
-     <height>23</height>
+     <width>777</width>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menufile">
     <property name="title">
      <string>open</string>
     </property>
-    <addaction name="actionopen_file"/>
+    <addaction name="actionopen_folder"/>
    </widget>
    <addaction name="menufile"/>
   </widget>
@@ -38,21 +38,26 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionprint_PDF"/>
+   <addaction name="actioncustom_scale"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <action name="actionimage_file">
+  <action name="actionopen_folder">
    <property name="text">
-    <string>image file</string>
+    <string>open folder</string>
    </property>
   </action>
-  <action name="actionreal_file">
+  <action name="actionprint_PDF">
    <property name="text">
-    <string>real file</string>
+    <string>print PDF</string>
+   </property>
+   <property name="toolTip">
+    <string>print PDF</string>
    </property>
   </action>
-  <action name="actionopen_file">
+  <action name="actioncustom_scale">
    <property name="text">
-    <string>open file</string>
+    <string>custom scale</string>
    </property>
   </action>
  </widget>

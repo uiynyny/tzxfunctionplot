@@ -6,6 +6,8 @@
 #include "model.h"
 #include <qwt_plot.h>
 #include <QVBoxLayout>
+#include <QListWidget>
+#include <QScrollArea>
 
 namespace Ui {
 class MainWindow;
@@ -18,18 +20,32 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    //void openFile(QString fname, QString type);
-    void initplot();
-    void replot();
+    QStringList readFile(QString dir);
+    void initplot(int);
+    void replot(int);
+    void initiallist();
 
 private slots:
-    void on_actionopen_file_triggered();
+
+    void on_actionopen_folder_triggered();
+
+    void on_actionprint_PDF_triggered();
+
+    void updateview(QListWidgetItem*);
+
+    void on_actioncustom_scale_triggered();
+
+    void slider_valuechanged(int);
 
 private:
     Ui::MainWindow *ui;
-    Data* data;
-    std::vector<QwtPlot *> plot;
+    std::vector<Data> dataSet;
     QVBoxLayout *layout;
+    std::vector<QwtPlot*> plot;
+    QWidget *print;
+    QListWidget *list;
+    QScrollArea *scrollArea;
+    QSlider *slide;
 };
 
 #endif // MAINWINDOW_H
