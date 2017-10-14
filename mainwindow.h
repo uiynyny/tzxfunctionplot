@@ -37,9 +37,14 @@ private slots:
 
     void slider_valuechanged(int);
 
+    void on_actioncreate_pdf_for_all_triggered();
+
+    void on_actionauto_scale_triggered();
+
 private:
     Ui::MainWindow *ui;
     std::vector<Data> dataSet;
+    QStringList frequency;
     QVBoxLayout *layout;
     std::vector<QwtPlot*> plot;
     QWidget *print;

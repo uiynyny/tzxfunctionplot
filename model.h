@@ -9,6 +9,7 @@ public:
     std::vector<double> Dist;
     std::vector<std::pair<double, std::vector<double>>> real;
     std::vector<std::pair<double, std::vector<double>>> imag;
+    double max=0,min=0;
 
     void clear(){
         Dist.clear();

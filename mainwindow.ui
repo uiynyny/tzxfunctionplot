@@ -29,7 +29,15 @@
     </property>
     <addaction name="actionopen_folder"/>
    </widget>
+   <widget class="QMenu" name="menuview">
+    <property name="title">
+     <string>view</string>
+    </property>
+    <addaction name="actioncustom_scale"/>
+    <addaction name="actionauto_scale"/>
+   </widget>
    <addaction name="menufile"/>
+   <addaction name="menuview"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -39,7 +47,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionprint_PDF"/>
-   <addaction name="actioncustom_scale"/>
+   <addaction name="actioncreate_pdf_for_all"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionopen_folder">
@@ -49,15 +57,31 @@
   </action>
   <action name="actionprint_PDF">
    <property name="text">
-    <string>print PDF</string>
+    <string>create PDF</string>
    </property>
    <property name="toolTip">
-    <string>print PDF</string>
+    <string>create PDF</string>
    </property>
   </action>
   <action name="actioncustom_scale">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>custom scale</string>
+   </property>
+  </action>
+  <action name="actioncreate_pdf_for_all">
+   <property name="text">
+    <string>create pdf for all</string>
+   </property>
+  </action>
+  <action name="actionauto_scale">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>auto scale</string>
    </property>
   </action>
  </widget>

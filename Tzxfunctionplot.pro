@@ -26,13 +26,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += main.cpp \
         mainwindow.cpp \
     CSVLoader.cpp \
-    plotview.cpp \
     custom_size.cpp
 
 HEADERS += mainwindow.h \
     CSVLoader.h \
     model.h \
-    plotview.h \
     custom_size.h
 
 FORMS += mainwindow.ui \

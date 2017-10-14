@@ -13,9 +13,13 @@
 #include <QHBoxLayout>
 #include <QPrinter>
 #include <QPrintDialog>
+#include <QMessageBox>
+#include <QTextStream>
+#include <QThread>
 #include <qwt_plot_grid.h>
 #include <qwt_plot_curve.h>
 #include <qwt_symbol.h>
+#include <qwt_plot_picker.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -31,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent) :
     scrollArea->setWidget(print);
 
     list=new QListWidget;
+
     slide =new QSlider(Qt::Vertical);
     slide->setMinimum(0);
     slide->setMaximum(200);
@@ -39,14 +44,15 @@ MainWindow::MainWindow(QWidget *parent) :
     QWidget *temp=new QWidget;
     QHBoxLayout *tlayout= new QHBoxLayout;
     temp->setLayout(tlayout);
+
     tlayout->addWidget(scrollArea);
     //tlayout->addWidget(slide);
     tlayout->addWidget(list);
-
     tlayout->setStretch(0,9);
     //tlayout->setStretch(1,0.5);
     tlayout->setStretch(1,1);
     this->setCentralWidget(temp);
+
     connect(slide,SIGNAL(valueChanged(int)),this,SLOT(slider_valuechanged(int)));
 }
 
@@ -63,38 +69,52 @@ void MainWindow::initplot(int index){
         delete item->widget();
         delete item;
     }
-    int max=0;
-    int min=0;
     for(int i=0; i<dataSet[index].imag.size();i++){
         for(int j=0; j<dataSet[index].imag[i].second.size();j++){
-            if(dataSet[index].imag[i].second.at(j)>max)
-                max=dataSet[index].imag[i].second.at(j);
-            if(dataSet[index].imag[i].second.at(j)<min)
-                min=dataSet[index].imag[i].second.at(j);
+            if(dataSet[index].imag[i].second.at(j)>dataSet[index].max)
+                dataSet[index].max=dataSet[index].imag[i].second.at(j);
+            if(dataSet[index].imag[i].second.at(j)<dataSet[index].min)
+                 dataSet[index].min=dataSet[index].imag[i].second.at(j);
         }
     }
     for(int i=0; i<dataSet[index].real.size();i++){
         for(int j=0; j<dataSet[index].real[i].second.size();j++){
-            if(dataSet[index].real[i].second.at(j)>max)
-                max=dataSet[index].real[i].second.at(j);
-            if(dataSet[index].real[i].second.at(j)<min)
-                min=dataSet[index].real[i].second.at(j);
+            if(dataSet[index].real[i].second.at(j)>dataSet[index].max)
+                 dataSet[index].max=dataSet[index].real[i].second.at(j);
+            if(dataSet[index].real[i].second.at(j)<dataSet[index].min)
+                 dataSet[index].min=dataSet[index].real[i].second.at(j);
         }
     }
     for(int i=0;i<dataSet[index].imag.size();i++){
         QwtPlot *p = new QwtPlot;
         p->enableAxis(QwtPlot::yRight,false);
         p->enableAxis(QwtPlot::xBottom, false);
+        if(i+1==dataSet[index].imag.size()){
+            p->enableAxis(QwtPlot::xBottom,true);
+        }
         p->setAxisTitle(QwtPlot::yLeft,QString::number(dataSet[index].imag[i].first));
         p->setAxisAutoScale(QwtPlot::yLeft);
         p->setCanvasBackground(QBrush(Qt::white));
-        p->setAxisScale(QwtPlot::yLeft,min,max,(max-min)/4);
+        if(!ui->actionauto_scale->isChecked()){
+            p->setAxisScale(QwtPlot::yLeft,(int)dataSet[index].min,(int)dataSet[index].max,(int)(dataSet[index].max-dataSet[index].min)/4);
+        }
+        QwtPlotPicker *picker = new QwtPlotPicker( QwtPlot::xBottom, QwtPlot::yLeft,
+                                                   QwtPlotPicker::CrossRubberBand, QwtPicker::AlwaysOn,
+                                                   p->canvas());
+        picker->setMousePattern(QwtEventPattern::MouseSelect1,
+                                Qt::RightButton, Qt::NoModifier );
+        //picker->setStateMachine( new QwtPickerDragPointMachine() );
+        picker->setRubberBandPen( QColor( Qt::green ) );
+        picker->setRubberBand( QwtPicker::CrossRubberBand );
+        picker->setTrackerPen( QColor( Qt::blue ) );
+
         layout->addWidget(p);
         plot.push_back(p);
     }
 }
 
 void MainWindow::replot(int item){
+    double min,max;
     for(int i=0; i<dataSet[item].imag.size();i++){
         QPolygonF p;
         for(int j=0; j<dataSet[item].imag[i].second.size();j++){
@@ -116,6 +136,8 @@ void MainWindow::replot(int item){
         curve->setSamples(p);
         curve->setPen(Qt::green,2);
         curve->attach(plot[i]);
+        min=curve->minYValue();
+        max=curve->maxYValue();
     }
 }
 
@@ -141,6 +163,7 @@ QStringList MainWindow::readFile(QString dir){
 
 void MainWindow::on_actionopen_folder_triggered()
 {
+    dataSet.clear();
     QString dir = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
                                                     QString(),
                                                     QFileDialog::ShowDirsOnly
@@ -148,6 +171,21 @@ void MainWindow::on_actionopen_folder_triggered()
     if(dir.isEmpty())return;
     QDir mDir(QFileInfo(dir).absoluteFilePath());
     QStringList qlist = readFile(dir);
+
+    if(qlist.filter(QRegExp("frequencies")).length()!=0){
+        QFile file(qlist.filter(QRegExp("frequencies")).at(0));
+        if(!file.open(QIODevice::ReadOnly)){
+            qDebug()<<"failed to open file";
+            return;
+        }
+        QTextStream in(&file);
+
+        while(!in.atEnd()) {
+            QString line = in.readLine();
+            QStringList  fields = line.split(",",QString::SkipEmptyParts);
+            frequency+=fields;
+        }
+    }
     qlist=qlist.filter(QRegExp("Line[0-9]*_[A-Z]*[a-z]*_(Imag|Real)"));
 
     QProgressDialog progress("Opening files...", "Abort",0,qlist.size(),this);
@@ -185,11 +223,13 @@ void MainWindow::on_actionopen_folder_triggered()
                     line=*(++it);
                     if(line[0].AsString()=="Frequencies"){
                         for(int i=1; i<line.Size(); i++){
-                            std::vector<double> tvector;
-                            if(type=="Imag")
-                                temp.imag.push_back(make_pair(line[i].AsDouble(),tvector));
-                            if(type=="Real")
-                                temp.real.push_back(make_pair(line[i].AsDouble(),tvector));
+                            if(frequency.contains(QString::fromStdString(line[i].AsString()))){
+                                std::vector<double> tvector;
+                                if(type=="Imag")
+                                    temp.imag.push_back(make_pair(line[i].AsDouble(),tvector));
+                                if(type=="Real")
+                                    temp.real.push_back(make_pair(line[i].AsDouble(),tvector));
+                            }
                         }
                     }
                     line=*(++it);
@@ -240,9 +280,13 @@ void MainWindow::on_actionopen_folder_triggered()
 
 void MainWindow::on_actionprint_PDF_triggered()
 {
-    QListWidgetItem* row=list->currentItem();
+    if(list->currentRow()==-1){
+        QMessageBox *error= new QMessageBox(QMessageBox::Warning,"Warning","no file was choosen");
+        error->show();
+        return;
+    }
     QPrinter prn;
-    prn.setOutputFileName(row->text()+".pdf");
+    prn.setOutputFileName(list->currentItem()->text()+".pdf");
     QSize size=print->size();
     qDebug()<<size;
     prn.setPaperSize(size,QPrinter::DevicePixel);
@@ -279,5 +323,76 @@ void MainWindow::slider_valuechanged(int i){
     for(int j=0;j<plot.size();j++){
         plot[j]->resize(w,h/plot.size());
         plot[j]->update();
+    }
+}
+
+void MainWindow::on_actioncreate_pdf_for_all_triggered()
+{
+    for (int i=0; i<dataSet.size(); i++) {
+
+        QWidget *temp=new QWidget();
+        QVBoxLayout *templayout=new QVBoxLayout;
+        temp->setLayout(templayout);
+
+        for(int j=0;j<dataSet[i].imag.size();j++){
+            //plot
+            QwtPlot *p = new QwtPlot;
+            p->enableAxis(QwtPlot::yRight,false);
+            p->enableAxis(QwtPlot::xBottom, false);
+            p->setAxisTitle(QwtPlot::yLeft,QString::number(dataSet[i].imag[j].first));
+            p->setAxisAutoScale(QwtPlot::yLeft);
+            p->setCanvasBackground(QBrush(Qt::white));
+
+            //curve
+            QPolygonF pi;
+            for(int k=0; k<dataSet[i].imag[j].second.size();k++){
+                pi<<QPointF(dataSet[i].Dist[k],dataSet[i].imag[j].second.at(k));
+            }
+            QwtPlotCurve *curvei= new QwtPlotCurve("Quadrature");
+            curvei->setYAxis(QwtPlot::yLeft);
+            curvei->setSamples(pi);
+            curvei->setPen(Qt::red,2);
+            curvei->attach(p);
+
+            if(dataSet[i].min>curvei->minYValue())
+                dataSet[i].min=curvei->minYValue();
+            if(dataSet[i].max<curvei->maxYValue())
+                dataSet[i].max=curvei->maxYValue();
+
+            QPolygonF pr;
+            for(int k=0; k<dataSet[i].real[j].second.size();k++){
+                pr<<QPointF(dataSet[i].Dist[k],dataSet[i].real[j].second.at(k));
+            }
+            QwtPlotCurve *curver= new QwtPlotCurve("In-Phase");
+            curver->setYAxis(QwtPlot::yLeft);
+            curver->setSamples(pr);
+            curver->setPen(Qt::green,2);
+            curver->attach(p);
+
+            if(dataSet[i].min>curver->minYValue())
+                dataSet[i].min=curver->minYValue();
+            if(dataSet[i].max<curver->maxYValue())
+                dataSet[i].max=curver->maxYValue();
+
+            if(!ui->actionauto_scale->isChecked()){
+                p->setAxisScale(QwtPlot::yLeft,(int)dataSet[i].min,(int)dataSet[i].max,(int)(dataSet[i].max-dataSet[i].min)/4);
+                p->replot();
+            }
+            templayout->addWidget(p);
+        }
+        temp->resize(3000,5000);
+        QPrinter prn;
+        prn.setOutputFileName(list->item(i)->text()+".pdf");
+        QSize size=temp->size();
+        prn.setPaperSize(size,QPrinter::DevicePixel);
+        temp->render(&prn);
+    }
+}
+
+void MainWindow::on_actionauto_scale_triggered()
+{
+    foreach (QwtPlot *p, plot){
+        p->setAxisAutoScale(QwtPlot::yLeft,true);
+        p->replot();
     }
 }
