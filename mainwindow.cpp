@@ -20,6 +20,7 @@
 #include <qwt_plot_curve.h>
 #include <qwt_symbol.h>
 #include <qwt_plot_picker.h>
+#include <qwt_picker_machine.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -103,7 +104,7 @@ void MainWindow::initplot(int index){
                                                    p->canvas());
         picker->setMousePattern(QwtEventPattern::MouseSelect1,
                                 Qt::RightButton, Qt::NoModifier );
-        //picker->setStateMachine( new QwtPickerDragPointMachine() );
+        picker->setStateMachine( new QwtPickerDragPointMachine() );
         picker->setRubberBandPen( QColor( Qt::green ) );
         picker->setRubberBand( QwtPicker::CrossRubberBand );
         picker->setTrackerPen( QColor( Qt::blue ) );
@@ -172,7 +173,9 @@ void MainWindow::on_actionopen_folder_triggered()
     QDir mDir(QFileInfo(dir).absoluteFilePath());
     QStringList qlist = readFile(dir);
 
+    bool controlfile=false;
     if(qlist.filter(QRegExp("frequencies")).length()!=0){
+        controlfile=true;
         QFile file(qlist.filter(QRegExp("frequencies")).at(0));
         if(!file.open(QIODevice::ReadOnly)){
             qDebug()<<"failed to open file";
@@ -223,8 +226,15 @@ void MainWindow::on_actionopen_folder_triggered()
                     line=*(++it);
                     if(line[0].AsString()=="Frequencies"){
                         for(int i=1; i<line.Size(); i++){
-                            if(frequency.contains(QString::fromStdString(line[i].AsString()))){
-                                std::vector<double> tvector;
+                            std::vector<double> tvector;
+                            if(controlfile){
+                                if(frequency.contains(QString::fromStdString(line[i].AsString()))){
+                                    if(type=="Imag")
+                                        temp.imag.push_back(make_pair(line[i].AsDouble(),tvector));
+                                    if(type=="Real")
+                                        temp.real.push_back(make_pair(line[i].AsDouble(),tvector));
+                                }
+                            }else{
                                 if(type=="Imag")
                                     temp.imag.push_back(make_pair(line[i].AsDouble(),tvector));
                                 if(type=="Real")
