@@ -199,15 +199,16 @@ void MainWindow::on_actionopen_folder_triggered()
     }
     qlist=qlist.filter(QRegExp("Line[0-9]*_[A-Z]*[a-z]*_(Imag|Real)"));
 
-    QProgressDialog progress("Opening files...", "Abort",0,qlist.size(),this);
+    QProgressDialog progress("Loading files...", "Abort",0,qlist.size(),this);
     progress.setWindowModality(Qt::WindowModal);
 
     foreach(QString file, qlist){
 
         progress.setValue(qlist.indexOf(file));
         if(progress.wasCanceled()){
-            break;
             dataSet.clear();
+            list->clear();
+            break;
         }
         bool badFile=false;
         Data temp= Data();
