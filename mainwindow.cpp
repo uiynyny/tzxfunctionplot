@@ -21,6 +21,7 @@
 #include <qwt_symbol.h>
 #include <qwt_plot_picker.h>
 #include <qwt_picker_machine.h>
+#include <qwt_plot_legenditem.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -37,24 +38,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     list=new QListWidget;
 
-    slide =new QSlider(Qt::Vertical);
-    slide->setMinimum(0);
-    slide->setMaximum(200);
-    slide->setValue(100);
-
     QWidget *temp=new QWidget;
     QHBoxLayout *tlayout= new QHBoxLayout;
     temp->setLayout(tlayout);
 
     tlayout->addWidget(scrollArea);
-    //tlayout->addWidget(slide);
     tlayout->addWidget(list);
     tlayout->setStretch(0,9);
-    //tlayout->setStretch(1,0.5);
     tlayout->setStretch(1,1);
     this->setCentralWidget(temp);
 
-    connect(slide,SIGNAL(valueChanged(int)),this,SLOT(slider_valuechanged(int)));
 }
 
 MainWindow::~MainWindow()
@@ -109,6 +102,19 @@ void MainWindow::initplot(int index){
         picker->setRubberBand( QwtPicker::CrossRubberBand );
         picker->setTrackerPen( QColor( Qt::blue ) );
 
+        if(i==0){
+            QwtPlotLegendItem *legendItem = new QwtPlotLegendItem();
+            legendItem->setRenderHint(QwtPlotItem::RenderAntialiased);
+
+            legendItem->setTextPen(QColor(Qt::black));
+            legendItem->setBorderPen(QColor(Qt::black));
+            QColor c(Qt::gray);
+            c.setAlpha(200);
+            legendItem->setBackgroundBrush(c);
+            legendItem->setMaxColumns(1);
+            legendItem->setAlignment(Qt::AlignRight|Qt::AlignBottom);
+            legendItem->attach(p);
+        }
         layout->addWidget(p);
         plot.push_back(p);
     }
@@ -165,6 +171,8 @@ QStringList MainWindow::readFile(QString dir){
 void MainWindow::on_actionopen_folder_triggered()
 {
     dataSet.clear();
+    list->clear();
+
     QString dir = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
                                                     QString(),
                                                     QFileDialog::ShowDirsOnly
@@ -197,6 +205,10 @@ void MainWindow::on_actionopen_folder_triggered()
     foreach(QString file, qlist){
 
         progress.setValue(qlist.indexOf(file));
+        if(progress.wasCanceled()){
+            break;
+            dataSet.clear();
+        }
         bool badFile=false;
         Data temp= Data();
         temp.name=QFileInfo(file).baseName();
@@ -326,15 +338,6 @@ void MainWindow::on_actioncustom_scale_triggered()
 
 }
 
-void MainWindow::slider_valuechanged(int i){
-    QSize size=print->size();
-    double h = size.height()*i/100;
-    double w = size.width()*i/100;
-    for(int j=0;j<plot.size();j++){
-        plot[j]->resize(w,h/plot.size());
-        plot[j]->update();
-    }
-}
 
 void MainWindow::on_actioncreate_pdf_for_all_triggered()
 {

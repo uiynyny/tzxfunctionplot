@@ -35,7 +35,6 @@ private slots:
 
     void on_actioncustom_scale_triggered();
 
-    void slider_valuechanged(int);
 
     void on_actioncreate_pdf_for_all_triggered();
 
@@ -50,7 +49,6 @@ private:
     QWidget *print;
     QListWidget *list;
     QScrollArea *scrollArea;
-    QSlider *slide;
 };
 
 #endif // MAINWINDOW_H
